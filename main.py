@@ -27,6 +27,7 @@ def auth_telegram_token(x_telegram_bot_api_secret_token: str = Header(None)) -> 
     # return true # uncomment to disable authentication
     # if x_telegram_bot_api_secret_token != secret_token:
     # raise HTTPException(status_code=403, detail="Not authenticated")
+    print(secret_token)
     return secret_token
 
 @app.post("/webhook/")
