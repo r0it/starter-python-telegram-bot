@@ -1,13 +1,12 @@
 import os
 from dotenv import load_dotenv
 from fastapi import FastAPI, Header, HTTPException, Depends, Request, Response
-from telegram import Update, Bot
+from telegram import Update, Bot, ForceReply
 from telegram.constants import ParseMode
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
 from http import HTTPStatus
 from telegram.ext import (
-    ForceReply,
     Application,
     CommandHandler,
     MessageHandler,
