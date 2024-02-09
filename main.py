@@ -81,10 +81,8 @@ async def error(update, context: ContextTypes.DEFAULT_TYPE):
 start_message = "<b>Ready to get fit?!</b>\n\nTo start, you can use following commands."  # html
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    with open('hello.gif', 'rb') as photo:
-        # await update.message.bot.send_photo(update.message.chat.id,photo=photo)
-        await update.message.reply_photo(photo=photo)
-    # await bot.send_message(chat_id=update.message.chat.id, text="Welcome to your personal fitness Bot!")
+    # with open('hello.gif', 'rb') as photo:
+    #     await update.message.reply_photo(photo=photo)
     await update.message.reply_text(
         reply_markup=ForceReply(selective=True),
         text=start_message,
