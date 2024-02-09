@@ -115,8 +115,7 @@ async def main() -> None:
         return Response(status=HTTPStatus.OK)
 
 
-    async with application:
-        await application.start()
+    application.start()
 
 
 
