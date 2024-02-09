@@ -1,81 +1,32 @@
 import os
 from dotenv import load_dotenv
-from fastapi import FastAPI, Header, HTTPException, Depends, Response, Request
+from fastapi import FastAPI, Header, HTTPException, Depends, Request, Response
 from telegram import Update, Bot
 from pydantic import BaseModel
-import asyncio
-import html
-import logging
-from dataclasses import dataclass
+from contextlib import asynccontextmanager
 from http import HTTPStatus
-from telegram.constants import ParseMode
 from telegram.ext import (
     Application,
-    CallbackContext,
     CommandHandler,
-    ContextTypes,
-    ExtBot,
-    TypeHandler,
+    MessageHandler,
+    filters,
+    CallbackQueryHandler,
+    ContextTypes
 )
+import logging
+
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+)
+
+logger = logging.getLogger(__name__)
+
+httpx_logger = logging.getLogger("httpx")
+httpx_logger.setLevel(logging.WARNING)
 
 class TelegramUpdate(BaseModel):
     update_id: int
     message: dict
-
-@dataclass
-class WebhookUpdate:
-    """Simple dataclass to wrap a custom update type"""
-
-    user_id: int
-    payload: str
-
-
-class CustomContext(CallbackContext[ExtBot, dict, dict, dict]):
-    """
-    Custom CallbackContext class that makes `user_data` available for updates of type
-    `WebhookUpdate`.
-    """
-
-    @classmethod
-    def from_update(
-        cls,
-        update: object,
-        application: "Application",
-    ) -> "CustomContext":
-        if isinstance(update, WebhookUpdate):
-            return cls(application=application, user_id=update.user_id)
-        return super().from_update(update, application)
-
-# Enable logging
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-# set higher logging level for httpx to avoid all GET and POST requests being logged
-# logging.getLogger("httpx").setLevel(logging.WARNING)
-
-async def start(update: Update, context: CustomContext) -> None:
-    """Display a message with instructions on how to use this bot."""
-    # payload_url = html.escape(f"{URL}/submitpayload?user_id=<your user id>&payload=<payload>")
-    # text = (
-    #     f"To check if the bot is still running, call <code>{URL}/healthcheck</code>.\n\n"
-    #     f"To post a custom update, call <code>{payload_url}</code>."
-    # )
-    # await update.message.reply_html(text=text)
-    await update.message.reply_text('Hi, this is a test')
-
-async def webhook_update(update: WebhookUpdate, context: CustomContext) -> None:
-    """Handle custom updates."""
-    # chat_member = await context.bot.get_chat_member(chat_id=update.user_id, user_id=update.user_id)
-    # payloads = context.user_data.setdefault("payloads", [])
-    # payloads.append(update.payload)
-    # combined_payloads = "</code>\n• <code>".join(payloads)
-    # text = (
-    #     f"The user {chat_member.user.mention_html()} has sent a new payload. "
-    #     f"So far they have sent the following payloads: \n\n• <code>{combined_payloads}</code>"
-    # )
-    # await context.bot.send_message(chat_id=update.user_id, text=text, parse_mode=ParseMode.HTML)
-    await update.message.reply_text('Hi, this is a custom test')
-
 
 # Load variables from .env file if present
 load_dotenv()
@@ -85,47 +36,91 @@ bot_token = os.getenv('BOT_TOKEN')
 secret_token = os.getenv("SECRET_TOKEN")
 webhook_url = os.getenv('CYCLIC_URL', 'http://localhost:8181') + "/webhook/"
 
-
-
-app = FastAPI()
-
-async def main() -> None:
-    """Set up PTB application and a web application for handling the incoming requests."""
-    context_types = ContextTypes(context=CustomContext)
-    # Here we set updater to None because we want our custom webhook server to handle the updates
-    # and hence we don't need an Updater instance
-    application = (
-        Application.builder().token(secret_token).updater(None).context_types(context_types).build()
-    )
-
-    # register handlers
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(TypeHandler(type=WebhookUpdate, callback=webhook_update))
-
-    # Pass webhook settings to telegram
-    await application.bot.set_webhook(url=webhook_url, allowed_updates=Update.ALL_TYPES)
-
-    # Set up webserver
-    app = FastAPI(__name__)
-    
-    @app.post("/webhook/")
-    async def handle_webhook(request: Request) -> Response:
-        """Handle incoming Telegram updates by putting them into the `update_queue`"""
-        await application.update_queue.put(Update.de_json(data=request.json, bot=application.bot))
-        return Response(status=HTTPStatus.OK)
-
-
-    application.start()
-
-
-
-
-
-# app = FastAPI()
-# bot = Bot(token=bot_token)
+bot = Bot(token=bot_token)
 # bot.set_webhook(url=webhook_url)
 # webhook_info = bot.get_webhook_info()
 # print(webhook_info)
+
+ptb = (
+    Application.builder()
+    .token(secret_token)
+    .read_timeout(7)
+    .get_updates_read_timeout(42)
+    .updater(None)
+)
+# if config.ENV:
+#     ptb = ptb.updater(None)
+ptb = ptb.build()
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    if webhook_url:
+        print(webhook_url)
+        await ptb.bot.setWebhook(webhook_url)
+    async with ptb:
+        print('Bot Started')
+        await ptb.start()
+        yield
+        await ptb.stop()
+
+
+app = FastAPI(lifespan=lifespan) #FastAPI()
+
+@app.get("/")
+def home():
+    return "Hello world!"
+
+
+async def error(update, context: ContextTypes.DEFAULT_TYPE):
+    """Log Errors caused by Updates."""
+    logger.warning('Update "%s" caused error "%s"', update, context.error)
+
+
+def add_handlers(dp):
+    # conversations (must be declared first, not sure why)
+    dp.add_handler(convo_handlers.edit_handler)
+    dp.add_handler(convo_handlers.config_chat_handler)
+
+    # on different commands - answer in Telegram
+    dp.add_handler(CommandHandler("start", commands.start))
+    dp.add_handler(CommandHandler("help", commands.help))
+    dp.add_handler(CommandHandler("add", commands.add))
+    dp.add_handler(CommandHandler("delete", commands.delete))
+    dp.add_handler(CommandHandler("list", commands.list_jobs))
+    dp.add_handler(CommandHandler("checkcron", commands.checkcron))
+    dp.add_handler(CommandHandler("options", commands.list_options))
+    dp.add_handler(CommandHandler("adminsonly", commands.option_restrict_to_admins))
+    dp.add_handler(CommandHandler("creatoronly", commands.option_restrict_to_user))
+    dp.add_handler(CommandHandler("changetz", commands.change_tz))
+    dp.add_handler(CommandHandler("reset", commands.reset))
+    dp.add_handler(CommandHandler("addmultiple", commands.add_multiple))
+
+    # on noncommand i.e message
+    dp.add_handler(MessageHandler(filters.TEXT, handlers.handle_messages))
+    dp.add_handler(MessageHandler(filters.PHOTO, handlers.handle_photos))
+    dp.add_handler(MessageHandler(filters.POLL, handlers.handle_polls))
+
+    # on callback
+    dp.add_handler(CallbackQueryHandler(handlers.handle_callback))
+
+    # log all errors
+    dp.add_error_handler(error)
+
+
+add_handlers(ptb)
+
+# Use webhook when running in prod (via gunicorn)
+# if config.ENV:
+
+@app.post("/")
+async def process_update(request: Request):
+    req = await request.json()
+    update = Update.de_json(req, ptb.bot)
+    await ptb.process_update(update)
+    return Response(status_code=HTTPStatus.OK)
+
+
 
 # def auth_telegram_token(x_telegram_bot_api_secret_token: str = Header(None)) -> str:
 #     # return true # uncomment to disable authentication
@@ -133,13 +128,9 @@ async def main() -> None:
 #         raise HTTPException(status_code=403, detail="Not authenticated")
 #     return x_telegram_bot_api_secret_token
 
-# @app.get("/")
-# async def hook():
-#     print("Hello World")
-    
 # @app.post("/webhook/")
 # async def handle_webhook(update: TelegramUpdate, token: str = Depends(auth_telegram_token)):
-#     chat_id = await update.message["chat"]["id"]
+#     chat_id = update.message["chat"]["id"]
 #     text = update.message["text"]
 #     print("Received message:", update.message)
 
@@ -151,4 +142,3 @@ async def main() -> None:
 #         await bot.send_message(chat_id=chat_id, reply_to_message_id=update.message["message_id"], text="Yo!")
 
 #     return {"ok": True}
-
