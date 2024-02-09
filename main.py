@@ -78,9 +78,12 @@ async def error(update, context: ContextTypes.DEFAULT_TYPE):
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
 # custom messages
-start_message = "<b>Thank you for using Recurring Messages!</b>\n\nTo start, please tell me your UTC timezone. For example, if your timezone is UTC+08:30, enter +08:30.\n\n(swipe left to reply to this message)"  # html
+start_message = "<b>Ready to get fit?!</b>\n\nTo start, you can use following commands."  # html
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    with open('hello.gif', 'rb') as photo:
+        await update.message.bot.send_photo(update.message.chat.id,photo=photo)
+    # await bot.send_message(chat_id=update.message.chat.id, text="Welcome to your personal fitness Bot!")
     await update.message.reply_text(
         reply_markup=ForceReply(selective=True),
         text=start_message,
