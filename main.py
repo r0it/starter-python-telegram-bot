@@ -2,10 +2,12 @@ import os
 from dotenv import load_dotenv
 from fastapi import FastAPI, Header, HTTPException, Depends, Request, Response
 from telegram import Update, Bot
+from telegram.constants import ParseMode
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
 from http import HTTPStatus
 from telegram.ext import (
+    ForceReply,
     Application,
     CommandHandler,
     MessageHandler,
@@ -76,33 +78,42 @@ async def error(update, context: ContextTypes.DEFAULT_TYPE):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
+# custom messages
+start_message = "<b>Thank you for using Recurring Messages!</b>\n\nTo start, please tell me your UTC timezone. For example, if your timezone is UTC+08:30, enter +08:30.\n\n(swipe left to reply to this message)"  # html
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        reply_markup=ForceReply(selective=True),
+        text=start_message,
+        parse_mode=ParseMode.HTML,
+    )
 
 def add_handlers(dp):
     # conversations (must be declared first, not sure why)
-    dp.add_handler(convo_handlers.edit_handler)
-    dp.add_handler(convo_handlers.config_chat_handler)
+    # dp.add_handler(convo_handlers.edit_handler)
+    # dp.add_handler(convo_handlers.config_chat_handler)
 
     # on different commands - answer in Telegram
-    dp.add_handler(CommandHandler("start", commands.start))
-    dp.add_handler(CommandHandler("help", commands.help))
-    dp.add_handler(CommandHandler("add", commands.add))
-    dp.add_handler(CommandHandler("delete", commands.delete))
-    dp.add_handler(CommandHandler("list", commands.list_jobs))
-    dp.add_handler(CommandHandler("checkcron", commands.checkcron))
-    dp.add_handler(CommandHandler("options", commands.list_options))
-    dp.add_handler(CommandHandler("adminsonly", commands.option_restrict_to_admins))
-    dp.add_handler(CommandHandler("creatoronly", commands.option_restrict_to_user))
-    dp.add_handler(CommandHandler("changetz", commands.change_tz))
-    dp.add_handler(CommandHandler("reset", commands.reset))
-    dp.add_handler(CommandHandler("addmultiple", commands.add_multiple))
+    dp.add_handler(CommandHandler("start", start))
+    # dp.add_handler(CommandHandler("help", commands.help))
+    # dp.add_handler(CommandHandler("add", commands.add))
+    # dp.add_handler(CommandHandler("delete", commands.delete))
+    # dp.add_handler(CommandHandler("list", commands.list_jobs))
+    # dp.add_handler(CommandHandler("checkcron", commands.checkcron))
+    # dp.add_handler(CommandHandler("options", commands.list_options))
+    # dp.add_handler(CommandHandler("adminsonly", commands.option_restrict_to_admins))
+    # dp.add_handler(CommandHandler("creatoronly", commands.option_restrict_to_user))
+    # dp.add_handler(CommandHandler("changetz", commands.change_tz))
+    # dp.add_handler(CommandHandler("reset", commands.reset))
+    # dp.add_handler(CommandHandler("addmultiple", commands.add_multiple))
 
     # on noncommand i.e message
-    dp.add_handler(MessageHandler(filters.TEXT, handlers.handle_messages))
-    dp.add_handler(MessageHandler(filters.PHOTO, handlers.handle_photos))
-    dp.add_handler(MessageHandler(filters.POLL, handlers.handle_polls))
+    # dp.add_handler(MessageHandler(filters.TEXT, handlers.handle_messages))
+    # dp.add_handler(MessageHandler(filters.PHOTO, handlers.handle_photos))
+    # dp.add_handler(MessageHandler(filters.POLL, handlers.handle_polls))
 
-    # on callback
-    dp.add_handler(CallbackQueryHandler(handlers.handle_callback))
+    # # on callback
+    # dp.add_handler(CallbackQueryHandler(handlers.handle_callback))
 
     # log all errors
     dp.add_error_handler(error)
