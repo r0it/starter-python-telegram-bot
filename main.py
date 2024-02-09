@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from fastapi import FastAPI, Header, HTTPException, Depends
+# from fastapi import FastAPI, Header, HTTPException, Depends
 from telegram import Update, Bot
 from pydantic import BaseModel
 
@@ -23,15 +23,15 @@ bot = Bot(token=bot_token)
 # webhook_info = bot.get_webhook_info()
 # print(webhook_info)
 
-def auth_telegram_token(x_telegram_bot_api_secret_token: str = Header(None)) -> str:
+async def auth_telegram_token(x_telegram_bot_api_secret_token: str = Header(None)) -> str:
     # return true # uncomment to disable authentication
-    if x_telegram_bot_api_secret_token != secret_token:
+    if await x_telegram_bot_api_secret_token != secret_token:
         raise HTTPException(status_code=403, detail="Not authenticated")
     return x_telegram_bot_api_secret_token
 
 @app.post("/webhook/")
 async def handle_webhook(update: TelegramUpdate, token: str = Depends(auth_telegram_token)):
-    chat_id = update.message["chat"]["id"]
+    chat_id = await update.message["chat"]["id"]
     text = update.message["text"]
     print("Received message:", update.message)
 
