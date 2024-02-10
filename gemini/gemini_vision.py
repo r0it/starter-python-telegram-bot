@@ -12,14 +12,14 @@ class VisionAPI:
         if not self.api_key:
             raise ValueError("API key not found. Set the API_KEY environment variable.")
 
-    def response(self, image_path: str, vision_prompt: str) -> str:
+    def response(self, image_data: any, vision_prompt: str) -> str:
         try:
-            if not image_path:
+            if not image_data:
                 return self._response(vision_prompt, None, None)
             else:
-                with open(image_path, "rb") as image_file:
-                    image_data = image_file.read()
-                mime_type = self._mime_type(image_path)
+                # with open(image_path, "rb") as image_file:
+                #     image_data = image_file.read()
+                mime_type = "image/jpeg" #self._mime_type(image_path)
                 encoded_image = base64.b64encode(image_data).decode("utf-8")
                 return self._response(vision_prompt, encoded_image, mime_type)
         except Exception as e:
