@@ -13,12 +13,11 @@ This is simple Python Telegram Bot.
 1) Create a SECRET_TOKEN and set it in the SECRET_TOKEN environment variable
 1) Run the following curl substituting the appropriate variables:
     ```
-    curl https://api.telegram.org/bot${BOT_TOKEN}/setWebhook
-        -F "url=https://${CYCLIC_URL}/webhook/" \
-        -F "secret_token=${SECRET_TOKEN}"
+    curl https://api.telegram.org/bot${SECRET_TOKEN}/setWebhook
+        -F "url=https://${CYCLIC_URL}/webhook/"
     ```
 1) Message you bot with `/start` or just say `Hello!`
-1) Check your bot's status: `https://api.telegram.org/bot${BOT_TOKEN}/getWebhookInfo`
+1) Check your bot's status: `https://api.telegram.org/bot${SECRET_TOKEN}/getWebhookInfo`
 
 ## Run Locally
 
