@@ -116,8 +116,8 @@ async def end_convo(update, _: ContextTypes.DEFAULT_TYPE):
 async def analyze_food_dish(update, _: ContextTypes.DEFAULT_TYPE):
     logger.info("trackCal by: %s", update.message.chat.first_name)
     food_photo = await update.message.photo[-1].get_file()
-    file_name='uploads/food_photo.jpg'
-    os.chmod('uploads', stat.S_IWRITE)
+    file_name='food_photo.jpg'
+    # os.chmod('uploads', stat.S_IWRITE)
     await food_photo.download_to_drive(file_name)
     genResponse = genai.response(file_name, config.TRACK_FOOD_PROMPT)
     await update.message.reply_text(
