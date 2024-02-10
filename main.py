@@ -108,7 +108,8 @@ async def initiate_ama(update: Update, context: ContextTypes.DEFAULT_TYPE):
         (time_now - genai_user_requests.get(user_id)).total_seconds() > 60):
         genai_user_requests.update({user_id: time_now})
     else:
-        return await update.message.reply_text("Sorry, wait a minute before your next query.")
+        await update.message.reply_text("Sorry, wait a minute before your next query.")
+        return ConversationHandler.END
     await update.message.reply_text("Ask me anything. Eg. Write a 50 words essay on A.I. \n\n/cancel to cancel the operation")
     return PROMPT
 
@@ -120,7 +121,8 @@ async def track_my_cal(update: Update, context: ContextTypes.DEFAULT_TYPE):
         (time_now - genai_user_requests.get(user_id)).total_seconds() > 60):
         genai_user_requests.update({user_id: time_now})
     else:
-        return await update.message.reply_text("Sorry, wait a minute before your next query.")
+        await update.message.reply_text("Sorry, wait a minute before your next query.")
+        return ConversationHandler.END
     await update.message.reply_text("Upload an image of your food to track calories. \n\n/cancel to cancel the operation")
     return PHOTO
 
