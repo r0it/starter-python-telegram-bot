@@ -1,4 +1,5 @@
 import os, stat
+from datetime import datetime
 import config
 from gemini.gemini_vision import VisionAPI
 from dotenv import load_dotenv
@@ -37,6 +38,7 @@ load_dotenv()
 
 # Initialize the Gemini Vision API
 genai = VisionAPI()
+genai_user_requests = {} #  to limit requests before 60 seconds per user
 
 # Read the variable from the environment (or .env file)
 bot_token = config.TG_BOT_TOKEN
@@ -99,10 +101,26 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 async def initiate_ama(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.message.from_user.id;
+    time_now = datetime.now()
+    # Allowing only 1 request per minute per user
+    if (genai_user_requests.get(user_id) is None or
+        (time_now - genai_user_requests.get(user_id)).total_seconds() > 60):
+        genai_user_requests.update({user_id: time_now})
+    else:
+        return await update.message.reply_text("Sorry, wait a minute before your next query.")
     await update.message.reply_text("Ask me anything. Eg. Write a 50 words essay on A.I. \n\n/cancel to cancel the operation")
     return PROMPT
 
 async def track_my_cal(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.message.from_user.id;
+    time_now = datetime.now()
+    # Allowing only 1 request per minute per user
+    if (genai_user_requests.get(user_id) is None or
+        (time_now - genai_user_requests.get(user_id)).total_seconds() > 60):
+        genai_user_requests.update({user_id: time_now})
+    else:
+        return await update.message.reply_text("Sorry, wait a minute before your next query.")
     await update.message.reply_text("Upload an image of your food to track calories. \n\n/cancel to cancel the operation")
     return PHOTO
 
@@ -116,9 +134,6 @@ async def end_convo(update, _: ContextTypes.DEFAULT_TYPE):
 async def analyze_food_dish(update, _: ContextTypes.DEFAULT_TYPE):
     logger.info("trackCal by: %s", update.message.chat.first_name)
     food_photo = await update.message.photo[-1].get_file()
-    # file_name='food_photo.jpg'
-    # os.chmod('uploads', stat.S_IWRITE)
-    # await food_photo.download_to_drive(file_name)
     imgBytes = await food_photo.download_as_bytearray()
     genResponse = genai.response(imgBytes, config.TRACK_FOOD_PROMPT)
     await update.message.reply_text(
