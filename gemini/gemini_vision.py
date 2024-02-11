@@ -1,8 +1,7 @@
-import os
-import base64
-import requests
-import config
+import os, base64, requests, config
 from dotenv import load_dotenv
+from IPython.display import Markdown
+from util import escape_markdown_data
 
 load_dotenv()
 
@@ -11,17 +10,25 @@ class VisionAPI:
         self.api_key = config.GOOGLE_API_KEY
         if not self.api_key:
             raise ValueError("API key not found. Set the API_KEY environment variable.")
+        
+    def to_markdown(self, text: str):
+        text = text.replace('•', '  *')
+        data = Markdown(text).data
+        return data
+        # return Markdown(text).data
 
     def response(self, image_data: any, vision_prompt: str) -> str:
         try:
             if not image_data:
-                return self._response(vision_prompt, None, None)
+                response = self._response(vision_prompt, None, None)
             else:
                 # with open(image_path, "rb") as image_file:
                 #     image_data = image_file.read()
                 mime_type = "image/jpeg" #self._mime_type(image_path)
                 encoded_image = base64.b64encode(image_data).decode("utf-8")
-                return self._response(vision_prompt, encoded_image, mime_type)
+                response = self._response(vision_prompt, encoded_image, mime_type)
+            # return Markdown(textwrap.indent(response, '> ', predicate=lambda _: True)).data
+            return self.to_markdown(response)
         except Exception as e:
             raise ValueError(f"Error generating caption: {e}")
 

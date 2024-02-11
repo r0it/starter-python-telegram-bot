@@ -1,4 +1,5 @@
 import os, stat
+from util import escape_markdown_data
 from datetime import datetime
 import config
 from gemini.gemini_vision import VisionAPI
@@ -88,17 +89,21 @@ async def error(update, context: ContextTypes.DEFAULT_TYPE):
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
 # custom messages
-start_message = "<b>Ready to get fit?</b>\n\nTrying fooling around with following commands. \n\n/trackMyCal (to track calories detail from your food image) \n\n/ama (Ask Me Anything)"  # html
-convo_end_msg = "Enjoying??? \n\n/trackMyCal (to track calories detail from your food image) \n\n/ama (Ask Me Anything)"
+start_message = config.START_MSG
 
 PHOTO = range(0)
 PROMPT = range(0)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        text=start_message,
-        parse_mode=ParseMode.HTML
+        text= escape_markdown_data(start_message),
+        parse_mode=ParseMode.MARKDOWN_V2
     )
+
+
+ama_txt = config.AMA_MSG
+
+timeout_str = config.TIMEOUT_MSG
 
 async def initiate_ama(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id;
@@ -108,10 +113,18 @@ async def initiate_ama(update: Update, context: ContextTypes.DEFAULT_TYPE):
         (time_now - genai_user_requests.get(user_id)).total_seconds() > 60):
         genai_user_requests.update({user_id: time_now})
     else:
-        await update.message.reply_text("Sorry, wait a minute before your next query.")
+        await update.message.reply_text(
+            text=escape_markdown_data(timeout_str),
+            parse_mode=ParseMode.MARKDOWN_V2
+            )
         return ConversationHandler.END
-    await update.message.reply_text("Ask me anything. Eg. Write a 50 words essay on A.I. \n\n/cancel to cancel the operation")
+    await update.message.reply_text(
+            text=escape_markdown_data(ama_txt),
+            parse_mode=ParseMode.MARKDOWN_V2
+            )
     return PROMPT
+
+img_upload_txt = config.IMG_UPLOAD_MSG
 
 async def track_my_cal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id;
@@ -121,15 +134,23 @@ async def track_my_cal(update: Update, context: ContextTypes.DEFAULT_TYPE):
         (time_now - genai_user_requests.get(user_id)).total_seconds() > 60):
         genai_user_requests.update({user_id: time_now})
     else:
-        await update.message.reply_text("Sorry, wait a minute before your next query.")
+        await update.message.reply_text(
+            text=escape_markdown_data(timeout_str),
+            parse_mode=ParseMode.MARKDOWN_V2
+            )
         return ConversationHandler.END
-    await update.message.reply_text("Upload an image of your food to track calories. \n\n/cancel to cancel the operation")
+    await update.message.reply_text(
+        text= escape_markdown_data(img_upload_txt),
+        parse_mode=ParseMode.MARKDOWN_V2
+        )
     return PHOTO
+
+after_resp_sign = config.CONVO_END_MSG
 
 async def end_convo(update, _: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        text = 'To track more food dishes, \n\n/trackMyCal (to track calories detail from your food image) \n\n/ama (Ask Me Anything)"',
-        parse_mode=ParseMode.HTML)  # html
+        text = escape_markdown_data(after_resp_sign),
+        parse_mode=ParseMode.MARKDOWN_V2)  # html
     return ConversationHandler.END
 
 
@@ -138,24 +159,28 @@ async def analyze_food_dish(update, _: ContextTypes.DEFAULT_TYPE):
     food_photo = await update.message.photo[-1].get_file()
     imgBytes = await food_photo.download_as_bytearray()
     genResponse = genai.response(imgBytes, config.TRACK_FOOD_PROMPT)
+    genResponse = genResponse + after_resp_sign
+    genResponse = escape_markdown_data(genResponse)
     await update.message.reply_text(
-        text = genResponse + "\n\n------\n\n" + convo_end_msg,
-        parse_mode=ParseMode.HTML)  # html
+        text = genResponse,
+        parse_mode=ParseMode.MARKDOWN_V2) #HTML
     return ConversationHandler.END
 
 
 async def ask_me_anything(update, _: ContextTypes.DEFAULT_TYPE):
     logger.info("ama by: %s", update.message.chat.first_name)
     genResponse = genai.response(None, update.message.text)
+    genResponse = genResponse + after_resp_sign
+    genResponse = escape_markdown_data(genResponse)
     await update.message.reply_text(
-        text = genResponse + "\n\n------\n\n" + convo_end_msg,
-        parse_mode=ParseMode.HTML)  # html
+        text = genResponse,
+        parse_mode=ParseMode.MARKDOWN_V2) #HTML
     return ConversationHandler.END
 
 convo_text_filter = filters.TEXT & ~filters.COMMAND
 
 track_my_cal_convo_handler = ConversationHandler(
-    entry_points=[CommandHandler("trackMyCal", track_my_cal)],
+    entry_points=[CommandHandler("scanMyImg", track_my_cal)],
     states={
         PHOTO: [
             MessageHandler(filters.PHOTO, analyze_food_dish)
