@@ -31,7 +31,7 @@ class VisionAPI:
             return self.to_markdown(response)
         except Exception as e:
             # raise ValueError(f"Error generating caption: {e}")
-            return (f"Error generating response")
+            return ("Error generating response")
 
     def _mime_type(self, image_path: str) -> str:
         if image_path.endswith(".jpg"):
