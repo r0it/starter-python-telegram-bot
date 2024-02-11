@@ -11,13 +11,16 @@ This is simple Python Telegram Bot.
 1) Create a new Telegram bot using [BotFather](https://t.me/botfather)
 1) Store the bot token into a BOT_TOKEN environment variable
 1) Create a SECRET_TOKEN and set it in the SECRET_TOKEN environment variable
-1) Run the following curl substituting the appropriate variables:
+1) Create a WEB_HOST env variable and set the current web host url
+1) Create ENV env variable and set the value as "PROD"
+1) Run the following curl substituting the appropriate variables to set the new webhook:
     ```
-    curl https://api.telegram.org/bot${SECRET_TOKEN}/setWebhook
-        -F "url=https://${CYCLIC_URL}/webhook/"
+    curl https://api.telegram.org/bot${SECRET_TOKEN}/setWebhook \
+        -F "url=https://${WEB_HOST}/webhook/"
     ```
 1) Message you bot with `/start` or just say `Hello!`
 1) Check your bot's status: `https://api.telegram.org/bot${SECRET_TOKEN}/getWebhookInfo`
+1) To delete web hook : `https://api.telegram.org/bot${SECRET_TOKEN}/deleteWebhook?drop_pending_updates=true`
 
 ## Run Locally
 
