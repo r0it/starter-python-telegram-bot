@@ -44,7 +44,7 @@ genai_user_requests = {} #  to limit requests before 60 seconds per user
 # Read the variable from the environment (or .env file)
 bot_token = config.TG_BOT_TOKEN
 secret_token = config.TG_SECRET_TOKEN
-webhook_url = config.WEB_HOST + "/webhook/"
+webhook_url = config.WEB_URL + "/webhook/"
 
 bot = Bot(token=bot_token)
 # bot.set_webhook(url=webhook_url)

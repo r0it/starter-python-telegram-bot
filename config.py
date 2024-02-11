@@ -15,7 +15,7 @@ WEB_HOST = getenv("WEB_HOST")
 WEB_URL = 'http://localhost:8181'
 if ENV is not None: 
     if CYCLIC_URL is not None:
-        WEB_HOST = CYCLIC_URL
+        WEB_URL = CYCLIC_URL
     elif WEB_HOST is not None:
         WEB_URL = WEB_HOST
 
