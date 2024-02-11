@@ -10,7 +10,7 @@ ENV = getenv("ENV")
 """ Telegram config """
 TG_BOT_TOKEN = getenv("TG_BOT_TOKEN")
 TG_SECRET_TOKEN = getenv("TG_SECRET_TOKEN")
-CYCLIC_URL = getenv("CYCLIC_URL", 'http://localhost:8181')
+WEB_HOST = getenv("CYCLIC_URL", 'http://localhost:8181')
 
 """ Google Gemini config """
 GOOGLE_API_KEY = getenv("GOOGLE_API_KEY")
