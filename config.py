@@ -24,7 +24,7 @@ GOOGLE_API_KEY = getenv("GOOGLE_API_KEY")
 TRACK_FOOD_PROMPT = """
 If you don't see any food items in the image, then just describe the image.
 If you see ingredients list or Nutrient Facts table, based on that information explain if it is healthy or not.
-If you see any food item in the image, then do the following.
+If you see any food item in the image, then only do the following.
 You are an expert in nutritionist where you need to see the food items from the image
                and calculate the total calories, also provide the details of every food items with calories intake
                is below format in descending order of calories
