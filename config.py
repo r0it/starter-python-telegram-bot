@@ -60,7 +60,7 @@ IMG_UPLOAD_MSG = """
 >
 > /cancel to cancel the operation
 """
-CONVO_END_MSG = """
+CONVO_END_MSG = """\n\n
 > **Enjoying?**
 > 
 >/scanMyImg (Upload any image)
